@@ -28,7 +28,7 @@ const configureServer = () => {
 
   // Importamos y usamos las rutas de robots
   const robotRoutes = require('../routes/robotRoutes');
-  app.use('/api/robots', robotRoutes);
+  app.use('api/nibble/', robotRoutes);
 
   // Middleware para manejar rutas no encontradas
   app.use(notFound);
