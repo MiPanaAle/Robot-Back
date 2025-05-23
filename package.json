@@ -3,16 +3,17 @@
   "version": "1.0.0",
   "description": "TCP Server for Robot Management System",
   "main": "app.js",
+  "type": "module",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "dev": "node app.js",
+    "start": "nodemon app.js",
     "test-client": "node tcpClient.js"
   },
   "dependencies": {
+    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^5.1.0",
-    "mssql": "^10.0.1"
+    "mssql": "^9.1.1",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

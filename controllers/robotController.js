@@ -4,19 +4,35 @@ export class ItemsController {
   static async getAllItems(req, res) {
     try {
       const items = await TcpClientModel.getAllItems();
-      res.json(items);
+      res.json({
+        success: true,
+        data: items
+      });
     } catch (error) {
-      res.status(500).json({ error: 'Error al obtener items' });
+      console.error('Error en getAllItems:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Error al obtener robots',
+        message: error.message 
+      });
     }
   }
 
   static async createItem(req, res) {
     try {
-      const { name } = req.body;
-      await TcpClientModel.createItem(name);
-      res.sendStatus(201);
+      const robotData = req.body;
+      const result = await TcpClientModel.createItem(robotData);
+      res.status(201).json({
+        success: true,
+        data: result
+      });
     } catch (error) {
-      res.status(500).json({ error: 'Error al crear item' });
+      console.error('Error en createItem:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Error al crear/actualizar robot',
+        message: error.message 
+      });
     }
   }
 }
