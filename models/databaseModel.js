@@ -1,64 +1,156 @@
-import sql from 'mssql';
-import { poolConnect } from '../config/db.js';
+import net from 'node:net';
 
-export class RobotModel {
-  static async getAllRobots() {
+export class TcpClientModel {
+  static TCP_HOST = process.env.TCP_HOST || 'localhost';
+  static TCP_PORT = process.env.TCP_PORT || 3002;
+
+  static async sendCommand(commandObj) {
+    return new Promise((resolve, reject) => {
+      const client = net.createConnection({ 
+        port: this.TCP_PORT, 
+        host: this.TCP_HOST 
+      }, () => {
+        console.log('Conectado al servidor TCP');
+        client.write(JSON.stringify(commandObj));
+      });
+
+      let dataBuffer = '';
+      client.on('data', (data) => {
+        dataBuffer += data.toString();
+      });
+
+      client.on('end', () => {
+        try {
+          const response = JSON.parse(dataBuffer);
+          if (response.status === 'SUCCESS') {
+            resolve(response.data);
+          } else {
+            reject(new Error(response.message || 'Error en servidor TCP'));
+          }
+        } catch (error) {
+          reject(new Error('Respuesta TCP inválida: ' + error.message));
+        }
+      });
+
+      client.on('error', (err) => {
+        console.error('Error en cliente TCP:', err);
+        reject(new Error('Error de conexión TCP: ' + err.message));
+      });
+
+      // Timeout para evitar conexiones colgadas
+      client.setTimeout(5000, () => {
+        client.destroy();
+        reject(new Error('Timeout en conexión TCP'));
+      });
+    });
+  }
+
+  // Obtener todos los robots
+  static async getAllItems() {
     try {
-      await poolConnect;
-      const result = await sql.query`SELECT * FROM Robots`;
-      return result.recordset;
+      const response = await this.sendCommand({
+        command: 'GET_ALL_ROBOTS'
+      });
+      return response;
     } catch (error) {
-      throw new Error(`Error al obtener robots: ${error.message}`);
+      console.error('Error al obtener todos los robots:', error);
+      throw error;
     }
   }
 
-  static async getRobotById(robotId) {
-    try {
-      await poolConnect;
-      const result = await sql.query`SELECT * FROM Robots WHERE RobotCode = ${robotId}`;
-      return result.recordset[0];
-    } catch (error) {
-      throw new Error(`Error al obtener robot: ${error.message}`);
-    }
-  }
-
+  // Obtener posiciones de todos los robots
   static async getRobotPositions() {
     try {
-      await poolConnect;
-      const result = await sql.query`SELECT RobotCode, X, Y, Battery, Speed FROM Robots`;
-      return result.recordset;
+      const response = await this.sendCommand({
+        command: 'GET_ROBOT_POSITIONS'
+      });
+      return response;
     } catch (error) {
-      throw new Error(`Error al obtener posiciones: ${error.message}`);
+      console.error('Error al obtener posiciones:', error);
+      throw error;
     }
   }
 
-  static async updateRobotPosition(robotId, x, y, battery) {
+  // Obtener robot por ID
+  static async getRobotById(robotId) {
     try {
-      await poolConnect;
-      await sql.query`UPDATE Robots SET X = ${x}, Y = ${y}, Battery = ${battery} WHERE RobotCode = ${robotId}`;
-      return await this.getRobotById(robotId);
+      const response = await this.sendCommand({
+        command: 'GET_ROBOT_BY_ID',
+        params: { robotId }
+      });
+      return response;
     } catch (error) {
-      throw new Error(`Error al actualizar posición: ${error.message}`);
+      console.error('Error al obtener robot por ID:', error);
+      throw error;
     }
   }
 
-  static async updateRobotSpeed(robotId, speed) {
+  // Actualizar posición de robot
+  static async updateRobotPosition(robotData) {
     try {
-      await poolConnect;
-      await sql.query`UPDATE Robots SET Speed = ${speed} WHERE RobotCode = ${robotId}`;
-      return await this.getRobotById(robotId);
+      const response = await this.sendCommand({
+        command: 'UPDATE_ROBOT_POSITION',
+        params: robotData
+      });
+      return response;
     } catch (error) {
-      throw new Error(`Error al actualizar velocidad: ${error.message}`);
+      console.error('Error al actualizar posición:', error);
+      throw error;
     }
   }
 
-  static async updateRobotBattery(robotId, battery) {
+  // Actualizar velocidad de robot
+  static async updateRobotSpeed(robotData) {
     try {
-      await poolConnect;
-      await sql.query`UPDATE Robots SET Battery = ${battery} WHERE RobotCode = ${robotId}`;
-      return await this.getRobotById(robotId);
+      const response = await this.sendCommand({
+        command: 'UPDATE_ROBOT_SPEED',
+        params: robotData
+      });
+      return response;
     } catch (error) {
-      throw new Error(`Error al actualizar batería: ${error.message}`);
+      console.error('Error al actualizar velocidad:', error);
+      throw error;
+    }
+  }
+
+  // Actualizar batería de robot
+  static async updateRobotBattery(robotData) {
+    try {
+      const response = await this.sendCommand({
+        command: 'UPDATE_ROBOT_BATTERY',
+        params: robotData
+      });
+      return response;
+    } catch (error) {
+      console.error('Error al actualizar batería:', error);
+      throw error;
+    }
+  }
+
+  // Crear o actualizar robot (método heredado)
+  static async createItem(robotData) {
+    try {
+      const response = await this.sendCommand({
+        command: 'UPDATE_ROBOT_POSITION',
+        params: robotData
+      });
+      return response;
+    } catch (error) {
+      console.error('Error al crear/actualizar robot:', error);
+      throw error;
+    }
+  }
+
+  // Verificar conexión con el servidor TCP
+  static async ping() {
+    try {
+      const response = await this.sendCommand({
+        command: 'PING'
+      });
+      return response;
+    } catch (error) {
+      console.error('Error en ping:', error);
+      throw error;
     }
   }
 }
