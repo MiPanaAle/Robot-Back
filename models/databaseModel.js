@@ -1,7 +1,7 @@
 import net from 'node:net';
 
 export class TcpClientModel {
-  static TCP_HOST = process.env.TCP_HOST || 'localhost';
+  static TCP_HOST = process.env.TCP_HOST || '192.168.1.108';
   static TCP_PORT = process.env.TCP_PORT || 3002;
 
   static async sendCommand(commandObj) {

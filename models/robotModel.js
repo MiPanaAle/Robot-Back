@@ -1,12 +1,8 @@
 const { sql, pool } = require('../config/db');
 
-/**
- * Modelo para manejar las operaciones de la base de datos relacionadas con robots
- */
+/* Modelo para manejar las operaciones de la base de datos relacionadas con robots */
 const RobotModel = {
-  /**
-   * Obtiene todos los robots de la base de datos
-   */
+  /* Obtiene todos los robots de la base de datos */
   getAllRobots: async () => {
     try {
       await pool;
@@ -19,9 +15,7 @@ const RobotModel = {
     }
   },
 
-  /**
-   * Obtiene un robot por su ID
-   */
+  /* Obtiene un robot por su ID */
   getRobotById: async (robotId) => {
     try {
       await pool;
@@ -35,9 +29,7 @@ const RobotModel = {
     }
   },
 
-  /**
-   * Obtiene las posiciones de todos los robots
-   */
+  /* Obtiene las posiciones de todos los robots */
   getRobotPositions: async () => {
     try {
       await pool;
@@ -50,59 +42,7 @@ const RobotModel = {
     }
   },
 
-  /**
-   * Actualiza la posición de un robot
-   */
-  updateRobotPosition: async (robotId, x, y, battery) => {
-    try {
-      await pool;
-      const request = pool.request();
-      request.input('RobotCode', sql.Int, robotId);
-      request.input('X', sql.Float, x);
-      request.input('Y', sql.Float, y);
-      request.input('Battery', sql.Float, battery);
-      
-      const result = await request.query(`
-        UPDATE Robots 
-        SET X = @X, Y = @Y, Battery = @Battery 
-        WHERE RobotCode = @RobotCode;
-        SELECT * FROM Robots WHERE RobotCode = @RobotCode;
-      `);
-      
-      return result.recordset[0];
-    } catch (err) {
-      console.error('Error al actualizar posición del robot:', err);
-      throw err;
-    }
-  },
-
-  /**
-   * Actualiza la velocidad de un robot
-   */
-  updateRobotSpeed: async (robotId, speed) => {
-    try {
-      await pool;
-      const request = pool.request();
-      request.input('RobotCode', sql.Int, robotId);
-      request.input('Speed', sql.Float, speed);
-      
-      const result = await request.query(`
-        UPDATE Robots 
-        SET Speed = @Speed 
-        WHERE RobotCode = @RobotCode;
-        SELECT * FROM Robots WHERE RobotCode = @RobotCode;
-      `);
-      
-      return result.recordset[0];
-    } catch (err) {
-      console.error('Error al actualizar velocidad del robot:', err);
-      throw err;
-    }
-  },
-
-  /**
-   * Actualiza el nivel de batería de un robot
-   */
+  /* Actualiza el nivel de batería de un robot */
   updateRobotBattery: async (robotId, battery) => {
     try {
       await pool;
@@ -124,9 +64,7 @@ const RobotModel = {
     }
   },
 
-  /**
-   * Crea un nuevo robot en la base de datos
-   */
+  /* Crea un nuevo robot en la base de datos */
   createRobot: async (robotData) => {
     try {
       await pool;
