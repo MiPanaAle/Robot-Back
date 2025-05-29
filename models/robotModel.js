@@ -1,54 +1,153 @@
-import net from 'node:net';
+const { sql, pool } = require('../config/db');
 
-export class TcpClientModel {
-  static async sendCommand(commandObj) {
-    return new Promise((resolve, reject) => {
-      const client = net.createConnection({ port: 3002 }, () => {
-        client.write(JSON.stringify(commandObj));
-      });
+/**
+ * Modelo para manejar las operaciones de la base de datos relacionadas con robots
+ */
+const RobotModel = {
+  /**
+   * Obtiene todos los robots de la base de datos
+   */
+  getAllRobots: async () => {
+    try {
+      await pool;
+      const request = pool.request();
+      const result = await request.query('SELECT * FROM Robots');
+      return result.recordset;
+    } catch (err) {
+      console.error('Error al obtener todos los robots:', err);
+      throw err;
+    }
+  },
 
-      let dataBuffer = '';
-      client.on('data', (data) => {
-        dataBuffer += data.toString();
-      });
+  /**
+   * Obtiene un robot por su ID
+   */
+  getRobotById: async (robotId) => {
+    try {
+      await pool;
+      const request = pool.request();
+      request.input('RobotCode', sql.Int, robotId);
+      const result = await request.query('SELECT * FROM Robots WHERE RobotCode = @RobotCode');
+      return result.recordset[0];
+    } catch (err) {
+      console.error('Error al obtener robot por ID:', err);
+      throw err;
+    }
+  },
 
-      client.on('end', () => {
-        try {
-          const response = JSON.parse(dataBuffer);
-          resolve(response);
-        } catch (error) {
-          reject(new Error('Respuesta TCP inválida'));
-        }
-      });
+  /**
+   * Obtiene las posiciones de todos los robots
+   */
+  getRobotPositions: async () => {
+    try {
+      await pool;
+      const request = pool.request();
+      const result = await request.query('SELECT RobotCode, X, Y, Battery, Speed FROM Robots');
+      return result.recordset;
+    } catch (err) {
+      console.error('Error al obtener posiciones de robots:', err);
+      throw err;
+    }
+  },
 
-      client.on('error', (err) => {
-        reject(err);
-      });
-    });
-  }
+  /**
+   * Actualiza la posición de un robot
+   */
+  updateRobotPosition: async (robotId, x, y, battery) => {
+    try {
+      await pool;
+      const request = pool.request();
+      request.input('RobotCode', sql.Int, robotId);
+      request.input('X', sql.Float, x);
+      request.input('Y', sql.Float, y);
+      request.input('Battery', sql.Float, battery);
+      
+      const result = await request.query(`
+        UPDATE Robots 
+        SET X = @X, Y = @Y, Battery = @Battery 
+        WHERE RobotCode = @RobotCode;
+        SELECT * FROM Robots WHERE RobotCode = @RobotCode;
+      `);
+      
+      return result.recordset[0];
+    } catch (err) {
+      console.error('Error al actualizar posición del robot:', err);
+      throw err;
+    }
+  },
 
-  static async getAllItems() {
-    const response = await this.sendCommand({
-      command: 'GET_ALL_ROBOTS'
-    });
-    
-    if (response.status === 'SUCCESS') {
-      return response.data;
-    } else {
-      throw new Error(response.message);
+  /**
+   * Actualiza la velocidad de un robot
+   */
+  updateRobotSpeed: async (robotId, speed) => {
+    try {
+      await pool;
+      const request = pool.request();
+      request.input('RobotCode', sql.Int, robotId);
+      request.input('Speed', sql.Float, speed);
+      
+      const result = await request.query(`
+        UPDATE Robots 
+        SET Speed = @Speed 
+        WHERE RobotCode = @RobotCode;
+        SELECT * FROM Robots WHERE RobotCode = @RobotCode;
+      `);
+      
+      return result.recordset[0];
+    } catch (err) {
+      console.error('Error al actualizar velocidad del robot:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Actualiza el nivel de batería de un robot
+   */
+  updateRobotBattery: async (robotId, battery) => {
+    try {
+      await pool;
+      const request = pool.request();
+      request.input('RobotCode', sql.Int, robotId);
+      request.input('Battery', sql.Float, battery);
+      
+      const result = await request.query(`
+        UPDATE Robots 
+        SET Battery = @Battery 
+        WHERE RobotCode = @RobotCode;
+        SELECT * FROM Robots WHERE RobotCode = @RobotCode;
+      `);
+      
+      return result.recordset[0];
+    } catch (err) {
+      console.error('Error al actualizar batería del robot:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Crea un nuevo robot en la base de datos
+   */
+  createRobot: async (robotData) => {
+    try {
+      await pool;
+      const request = pool.request();
+      request.input('X', sql.Float, robotData.x || 0);
+      request.input('Y', sql.Float, robotData.y || 0);
+      request.input('Battery', sql.Float, robotData.battery || 100);
+      request.input('Speed', sql.Float, robotData.speed || 1);
+      
+      const result = await request.query(`
+        INSERT INTO Robots (X, Y, Battery, Speed)
+        OUTPUT INSERTED.*
+        VALUES (@X, @Y, @Battery, @Speed)
+      `);
+      
+      return result.recordset[0];
+    } catch (err) {
+      console.error('Error al crear robot:', err);
+      throw err;
     }
   }
+};
 
-  static async createItem(robotData) {
-    const response = await this.sendCommand({
-      command: 'UPDATE_ROBOT_POSITION',
-      params: robotData
-    });
-    
-    if (response.status === 'SUCCESS') {
-      return response.data;
-    } else {
-      throw new Error(response.message);
-    }
-  }
-}
+module.exports = RobotModel;

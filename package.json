@@ -1,31 +1,30 @@
+
 {
-  "name": "robot-management-tcp",
+  "name": "robot-management-backend",
   "version": "1.0.0",
-  "description": "TCP Server for Robot Management System",
+  "description": "Backend API for robot management system",
   "main": "app.js",
-  "type": "module",
   "scripts": {
-    "dev": "node app.js",
     "start": "nodemon app.js",
-    "test-client": "node tcpClient.js"
+    "dev": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "mssql": "^9.1.1",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "mssql": "^10.0.1",
+    "express-async-handler": "^1.2.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "engines": {
-    "node": ">=14.0.0"
-  },
   "keywords": [
-    "tcp",
-    "server",
-    "robots",
-    "socket",
-    "nodejs"
-  ]
+    "robot",
+    "api",
+    "express",
+    "sql-server"
+  ],
+  "author": "",
+  "license": "MIT"
 }
