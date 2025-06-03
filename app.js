@@ -1,6 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import { ItemsController } from './controllers/robotController.js';
+
+// Cargar variables de entorno
+dotenv.config();
 
 const app = express();
 
@@ -18,7 +22,6 @@ app.use((req, res, next) => {
 });
 
 // Rutas principales
-app.get('/robots', ItemsController.getAllItems);
 app.get('/robots/positions', ItemsController.getRobotPositions);
 app.get('/robots/:id', ItemsController.getRobotById);
 app.put('/robots/:id/position', ItemsController.updateRobotPosition);
@@ -27,7 +30,6 @@ app.put('/robots/:id/battery', ItemsController.updateRobotBattery);
 app.post('/robots', ItemsController.createItem);
 
 // Rutas con prefijo /api (para compatibilidad)
-app.get('/api/robots', ItemsController.getAllItems);
 app.get('/api/robots/positions', ItemsController.getRobotPositions);
 app.get('/api/robots/:id', ItemsController.getRobotById);
 app.put('/api/robots/:id/position', ItemsController.updateRobotPosition);

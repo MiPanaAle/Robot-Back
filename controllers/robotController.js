@@ -1,24 +1,6 @@
-import { TcpClientModel } from '../models/robotModel.js';
+import { TcpClientModel } from '../models/databaseModel.js';
 
 export class ItemsController {
-  // Obtener todos los robots
-  static async getAllItems(req, res) {
-    try {
-      const items = await TcpClientModel.getAllItems();
-      res.json({
-        success: true,
-        data: items
-      });
-    } catch (error) {
-      console.error('Error en getAllItems:', error);
-      res.status(500).json({ 
-        success: false,
-        error: 'Error al obtener robots',
-        message: error.message 
-      });
-    }
-  }
-
   // Obtener posiciones de todos los robots
   static async getRobotPositions(req, res) {
     try {
@@ -26,10 +8,10 @@ export class ItemsController {
       // Transformar los datos para que coincidan con el formato esperado por el frontend
       const transformedData = positions.map(robot => ({
         robotCode: robot.RobotCode,
-        x: robot.X || Math.random() * 500, // Valores por defecto si no existen
-        y: robot.Y || Math.random() * 300,
-        battery: robot.Battery || 100,
-        speed: robot.Speed || 1
+        x: robot.X, // Valores por defecto si no existen
+        y: robot.Y,
+        battery: robot.Battery,
+        speed: robot.Speed
       }));
       
       res.json(transformedData);

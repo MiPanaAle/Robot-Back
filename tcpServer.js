@@ -1,5 +1,5 @@
 import net from 'net';
-import { RobotModel } from './models/databaseModel.js';
+import { RobotModel } from './models/robotModel'; 
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -77,15 +77,15 @@ class CommandHandlers {
     }
   }
 
-  static async handleUpdateRobotPosition(params) {
-    try {
-      const { robotId, x, y, battery } = params;
-      const updatedRobot = await RobotModel.updateRobotPosition(robotId, x, y, battery);
-      return TCPProtocol.createResponse(
-        TCPProtocol.STATUS.SUCCESS,
-        updatedRobot,
-        "Posición actualizada exitosamente"
-      );
+static async handleUpdateRobotPosition(params) {
+  try {
+    const { robotId, x, y, battery } = params;
+    const updatedRobot = await RobotModel.updateRobotPosition({
+      robotId,
+      x,
+      y,
+      battery
+    });
     } catch (error) {
       return TCPProtocol.createResponse(
         TCPProtocol.STATUS.ERROR,

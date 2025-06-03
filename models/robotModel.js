@@ -1,91 +1,166 @@
-const { sql, pool } = require('../config/db');
+import dotenv from "dotenv";
+import { getDB, sql } from "../config/db";
 
-/* Modelo para manejar las operaciones de la base de datos relacionadas con robots */
-const RobotModel = {
-  /* Obtiene todos los robots de la base de datos */
-  getAllRobots: async () => {
+dotenv.config();
+
+// Configuración de la base de datos
+const dbConfig = {
+  server: process.env.DB_SERVER,
+  database: process.env.DB_DATABASE,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  options: {
+    encrypt: false, // Para conexiones locales
+    trustServerCertificate: true,
+  },
+};
+
+// Pool de conexiones
+let pool;
+
+async function getDB() {
+  if (!pool) {
     try {
-      await pool;
-      const request = pool.request();
-      const result = await request.query('SELECT * FROM Robots');
-      return result.recordset;
+      pool = await sql.connect(dbConfig);
+      console.log("✅ Conectado a SQL Server");
     } catch (err) {
-      console.error('Error al obtener todos los robots:', err);
+      console.error("❌ Error conectando a la base de datos:", err);
       throw err;
     }
-  },
+  }
+  return pool;
+}
 
-  /* Obtiene un robot por su ID */
-  getRobotById: async (robotId) => {
+export class TcpClientModel {
+  // Obtener todos los robots
+  static async getAllRobots() {
     try {
-      await pool;
+      const pool = await getDB();
+      const result = await pool.request().query("SELECT * FROM Robots");
+      return result.recordset;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Obtener posiciones de todos los robots
+  static async getRobotPositions() {
+    try {
+      const pool = await getDB();
+      const result = await pool
+        .request()
+        .query("SELECT RobotCode, X, Y, Battery, Speed FROM Robots");
+      return result.recordset;
+    } catch (error) {
+      console.error("Error al obtener posiciones:", error);
+      throw error;
+    }
+  }
+
+  // Obtener robot por ID
+  static async getRobotById(robotId) {
+    try {
+      const pool = await getDB();
       const request = pool.request();
-      request.input('RobotCode', sql.Int, robotId);
-      const result = await request.query('SELECT * FROM Robots WHERE RobotCode = @RobotCode');
+      request.input("RobotCode", sql.Int, robotId);
+      const result = await request.query(
+        "SELECT * FROM Robots WHERE RobotCode = @RobotCode"
+      );
       return result.recordset[0];
-    } catch (err) {
-      console.error('Error al obtener robot por ID:', err);
-      throw err;
+    } catch (error) {
+      console.error("Error al obtener robot por ID:", error);
+      throw error;
     }
-  },
+  }
 
-  /* Obtiene las posiciones de todos los robots */
-  getRobotPositions: async () => {
+  // Actualizar posición de robot
+  static async updateRobotPosition(robotData) {
     try {
-      await pool;
+      const pool = await getDB();
       const request = pool.request();
-      const result = await request.query('SELECT RobotCode, X, Y, Battery, Speed FROM Robots');
-      return result.recordset;
-    } catch (err) {
-      console.error('Error al obtener posiciones de robots:', err);
-      throw err;
+      request.input("RobotCode", sql.Int, robotData.robotId);
+      request.input("X", sql.Float, robotData.x);
+      request.input("Y", sql.Float, robotData.y);
+      request.input("Battery", sql.Float, robotData.battery);
+
+      const result = await request.query(`
+        UPDATE Robots 
+        SET X = @X, Y = @Y, Battery = @Battery 
+        WHERE RobotCode = @RobotCode;
+        SELECT * FROM Robots WHERE RobotCode = @RobotCode;
+      `);
+
+      return result.recordset[0];
+    } catch (error) {
+      console.error("Error al actualizar posición:", error);
+      throw error;
     }
-  },
+  }
 
-  /* Actualiza el nivel de batería de un robot */
-  updateRobotBattery: async (robotId, battery) => {
+  // Actualizar velocidad de robot
+  static async updateRobotSpeed(robotData) {
     try {
-      await pool;
+      const pool = await getDB();
       const request = pool.request();
-      request.input('RobotCode', sql.Int, robotId);
-      request.input('Battery', sql.Float, battery);
-      
+      request.input("RobotCode", sql.Int, robotData.robotId);
+      request.input("Speed", sql.Float, robotData.speed);
+
+      const result = await request.query(`
+        UPDATE Robots 
+        SET Speed = @Speed 
+        WHERE RobotCode = @RobotCode;
+        SELECT * FROM Robots WHERE RobotCode = @RobotCode;
+      `);
+
+      return result.recordset[0];
+    } catch (error) {
+      console.error("Error al actualizar velocidad:", error);
+      throw error;
+    }
+  }
+
+  // Actualizar batería de robot
+  static async updateRobotBattery(robotData) {
+    try {
+      const pool = await getDB();
+      const request = pool.request();
+      request.input("RobotCode", sql.Int, robotData.robotId);
+      request.input("Battery", sql.Float, robotData.battery);
+
       const result = await request.query(`
         UPDATE Robots 
         SET Battery = @Battery 
         WHERE RobotCode = @RobotCode;
         SELECT * FROM Robots WHERE RobotCode = @RobotCode;
       `);
-      
-      return result.recordset[0];
-    } catch (err) {
-      console.error('Error al actualizar batería del robot:', err);
-      throw err;
-    }
-  },
 
-  /* Crea un nuevo robot en la base de datos */
-  createRobot: async (robotData) => {
+      return result.recordset[0];
+    } catch (error) {
+      console.error("Error al actualizar batería:", error);
+      throw error;
+    }
+  }
+
+  // Crear o actualizar robot
+  static async createItem(robotData) {
     try {
-      await pool;
+      const pool = await getDB();
       const request = pool.request();
-      request.input('X', sql.Float, robotData.x || 0);
-      request.input('Y', sql.Float, robotData.y || 0);
-      request.input('Battery', sql.Float, robotData.battery || 100);
-      request.input('Speed', sql.Float, robotData.speed || 1);
-      
+      request.input("X", sql.Float, robotData.x || 0);
+      request.input("Y", sql.Float, robotData.y || 0);
+      request.input("Battery", sql.Float, robotData.battery || 100);
+      request.input("Speed", sql.Float, robotData.speed || 1);
+
       const result = await request.query(`
         INSERT INTO Robots (X, Y, Battery, Speed)
         OUTPUT INSERTED.*
         VALUES (@X, @Y, @Battery, @Speed)
       `);
-      
+
       return result.recordset[0];
-    } catch (err) {
-      console.error('Error al crear robot:', err);
-      throw err;
+    } catch (error) {
+      console.error("Error al crear robot:", error);
+      throw error;
     }
   }
-};
-
-module.exports = RobotModel;
+}

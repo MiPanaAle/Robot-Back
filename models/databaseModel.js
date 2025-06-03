@@ -1,4 +1,7 @@
 import net from 'node:net';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export class TcpClientModel {
   static TCP_HOST = process.env.TCP_HOST || '192.168.1.108';
